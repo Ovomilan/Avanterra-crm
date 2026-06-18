@@ -33,6 +33,7 @@ const initialData = {
     { id: 4, text: "Акт приёмки — объект Сейткали", dueDate: "2026-06-20", priority: "normal", status: "done" },
     { id: 5, text: "Финальный расчёт с ТОО BuildCom", dueDate: "2026-06-25", priority: "normal", status: "active" },
   ],
+  deletedDeals: [],
 };
 
 function loadData() {
@@ -376,7 +377,11 @@ function DealDetail({ data, dealId, setPage, setData, showToast, user }) {
         <>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
             <Btn variant="outline" onClick={()=>setEditing(true)}>Редактировать</Btn>
-            <Btn variant="danger" onClick={()=>{setData(d=>({...d,deals:d.deals.filter(x=>x.id!==dealId)}));showToast("Сделка удалена");setPage("deals");}}>Удалить</Btn>
+            <Btn variant="danger" onClick={()=>{
+              const deal = data.deals.find(x=>x.id===dealId);
+              setData(d=>({...d, deals:d.deals.filter(x=>x.id!==dealId), deletedDeals:[...(d.deletedDeals||[]),{...deal,deletedAt:TODAY}]}));
+              showToast("Сделка удалена");setPage("deals");
+            }}>Удалить</Btn>
           </div>
           <div style={{background:"#fff",borderRadius:14,border:"1px solid #ede9e3",padding:16}}>
             <div style={{fontSize:12,color:"#aaa",marginBottom:10,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.05em"}}>Изменить стадию</div>
@@ -561,6 +566,65 @@ function Clients({ data, setData, showToast, user }) {
   );
 }
 
+// ── TRASH ────────────────────────────────────────────────────────────────────
+function TrashDeals({ data, setData, showToast }) {
+  const deleted = data.deletedDeals || [];
+  const [confirmId, setConfirmId] = useState(null);
+
+  const restore = id => {
+    const deal = deleted.find(d=>d.id===id);
+    if (!deal) return;
+    const { deletedAt, ...rest } = deal;
+    setData(d=>({ ...d, deals:[...d.deals,rest], deletedDeals:d.deletedDeals.filter(x=>x.id!==id) }));
+    showToast("Сделка восстановлена");
+  };
+
+  const erase = id => {
+    setData(d=>({ ...d, deletedDeals:d.deletedDeals.filter(x=>x.id!==id) }));
+    showToast("Удалено навсегда");
+    setConfirmId(null);
+  };
+
+  return (
+    <div style={{padding:"0 16px 16px"}}>
+      {deleted.length === 0 ? (
+        <div style={{textAlign:"center",padding:"60px 0",color:"#bbb"}}>
+          <div style={{fontSize:40,marginBottom:12}}>🗑️</div>
+          <div style={{fontSize:15,fontWeight:600,color:"#aaa"}}>Корзина пуста</div>
+          <div style={{fontSize:13,color:"#bbb",marginTop:6}}>Удалённые сделки будут храниться здесь</div>
+        </div>
+      ) : (
+        <>
+          <div style={{background:"#FFF3E0",border:"1px solid #FFB74D",borderRadius:12,padding:"11px 14px",marginBottom:14,fontSize:12,color:"#E65100"}}>
+            🗑️ {deleted.length} {deleted.length===1?"сделка":"сделок"} в корзине — можно восстановить или удалить насовсем
+          </div>
+          {deleted.map(d=>(
+            <div key={d.id} style={{background:"#fff",borderRadius:14,border:"1px solid #ede9e3",padding:"14px 16px",marginBottom:10,opacity:0.85}}>
+              <div style={{fontSize:14,fontWeight:600,color:"#1a1a1a",marginBottom:4,lineHeight:1.4}}>{d.title}</div>
+              <div style={{fontSize:12,color:"#aaa",marginBottom:2}}>{d.client} · {d.address}</div>
+              <div style={{fontSize:11,color:"#bbb",marginBottom:12}}>Удалено: {d.deletedAt} · {d.area} м²</div>
+              {confirmId === d.id ? (
+                <div>
+                  <div style={{fontSize:13,color:"#c73534",marginBottom:10,fontWeight:500}}>Удалить навсегда? Это нельзя отменить.</div>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                    <Btn variant="ghost" onClick={()=>setConfirmId(null)}>Отмена</Btn>
+                    <Btn variant="danger" onClick={()=>erase(d.id)}>Да, удалить</Btn>
+                  </div>
+                </div>
+              ) : (
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                  <Btn variant="outline" onClick={()=>restore(d.id)}>↩ Восстановить</Btn>
+                  <Btn variant="danger" onClick={()=>setConfirmId(d.id)}>Удалить навсегда</Btn>
+                </div>
+              )}
+            </div>
+          ))}
+        </>
+      )}
+    </div>
+  );
+}
+
 // ── STAFF VIEW (замеры) ───────────────────────────────────────────────────────
 function StaffMeasures({ data }) {
   const measures = data.deals.filter(d => d.stage === "measure");
@@ -620,7 +684,7 @@ function formatDate(dateStr) {
 }
 
 // ── APP ──────────────────────────────────────────────────────────────────────
-const DIR_TITLES = {dashboard:"Дашборд",deals:"Сделки",clients:"Клиенты",tasks:"Задачи","deal-detail":"Сделка"};
+const DIR_TITLES = {dashboard:"Дашборд",deals:"Сделки",clients:"Клиенты",tasks:"Задачи","deal-detail":"Сделка",trash:"Корзина"};
 const STAFF_TITLES = {measures:"Замеры",tasks:"Задачи"};
 
 export default function App() {
@@ -648,6 +712,7 @@ export default function App() {
     {key:"deals",label:"Сделки",icon:"💼"},
     {key:"clients",label:"Клиенты",icon:"👥"},
     {key:"tasks",label:"Задачи",icon:"✅",badge:pendingCount>0?pendingCount:null},
+    {key:"trash",label:"Корзина",icon:"🗑️",badge:(data.deletedDeals||[]).length>0?(data.deletedDeals||[]).length:null},
   ];
 
   const STAFF_NAV = [
@@ -678,6 +743,7 @@ export default function App() {
         {isDir && page==="deal-detail" && <DealDetail data={data} dealId={selectedDeal} setPage={setPage} setData={setData} showToast={showToast} user={user}/>}
         {isDir && page==="clients" && <Clients data={data} setData={setData} showToast={showToast} user={user}/>}
         {isDir && page==="tasks" && <Tasks data={data} setData={setData} showToast={showToast} user={user}/>}
+        {isDir && page==="trash" && <TrashDeals data={data} setData={setData} showToast={showToast}/>}
         {/* Staff pages */}
         {!isDir && page==="measures" && <StaffMeasures data={data}/>}
         {!isDir && page==="tasks" && <Tasks data={data} setData={setData} showToast={showToast} user={user}/>}
