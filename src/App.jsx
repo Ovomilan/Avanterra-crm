@@ -4,8 +4,8 @@ const STORAGE_KEY = "avanterra_crm_v2";
 const AUTH_KEY = "avanterra_auth_v2";
 
 const PINS = {
-  "5555": { role: "director", name: "Милан", label: "Директор" },
-  "1234": { role: "staff", name: "Сотрудник", label: "Сотрудник" },
+  "196547": { role: "director", name: "Милан", label: "Директор" },
+  "172548": { role: "staff", name: "Сотрудник", label: "Сотрудник" },
 };
 
 // task.status: "active" | "pending" | "done"
@@ -103,11 +103,11 @@ function PinScreen({ onAuth }) {
   const [shake, setShake] = useState(false);
 
   const handleDigit = d => {
-    if (pin.length >= 4) return;
+    if (pin.length >= 6) return;
     const next = pin + d;
     setPin(next);
     setError(false);
-    if (next.length === 4) {
+    if (next.length === 6) {
       setTimeout(() => {
         if (PINS[next]) { onAuth(PINS[next]); }
         else { setShake(true); setError(true); setTimeout(()=>{ setPin(""); setShake(false); }, 600); }
@@ -125,7 +125,7 @@ function PinScreen({ onAuth }) {
         <div style={{ fontSize:13, color:"#aaa", marginTop:5 }}>Введите PIN-код для входа</div>
       </div>
       <div style={{ display:"flex", gap:16, marginBottom:44, animation:shake?"shake 0.4s ease":"none" }}>
-        {[0,1,2,3].map(i=>(
+        {[0,1,2,3,4,5].map(i=>(
           <div key={i} style={{ width:14, height:14, borderRadius:"50%", background:i<pin.length?(error?"#E24B4A":"#C9956A"):"#ddd", transition:"background 0.15s" }}/>
         ))}
       </div>
