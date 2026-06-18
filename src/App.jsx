@@ -312,7 +312,26 @@ function DealsList({ data, setPage, setSelectedDeal, setData, showToast, user })
       {isDir && <Btn onClick={()=>setShowAdd(true)} style={{width:"100%",marginTop:6}}>+ Новая сделка</Btn>}
       {showAdd && (
         <Modal title="Новая сделка" onClose={()=>setShowAdd(false)}>
-          <DealForm onSave={deal=>{setData(d=>({...d,deals:[...d.deals,{...deal,id:Date.now()}]}));showToast("Сделка добавлена");setShowAdd(false);}} onClose={()=>setShowAdd(false)}/>
+          <DealForm onSave={deal=>{
+            const newDeal = {...deal, id:Date.now()};
+            setData(d=>{
+              // Check if client already exists (by name)
+              const exists = d.clients.some(c => c.name.trim().toLowerCase() === deal.client.trim().toLowerCase());
+              const newClients = exists ? d.clients : [...d.clients, {
+                id: Date.now() + 1,
+                name: deal.client,
+                phone: deal.phone || "",
+                email: "",
+                type: "Физлицо",
+                source: "Сделка",
+                dealsCount: 1,
+                totalAmount: deal.amount || 0,
+              }];
+              return {...d, deals:[...d.deals, newDeal], clients: newClients};
+            });
+            showToast("Сделка добавлена");
+            setShowAdd(false);
+          }} onClose={()=>setShowAdd(false)}/>
         </Modal>
       )}
     </div>
