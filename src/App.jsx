@@ -339,6 +339,84 @@ function DealsList({ data, setPage, setSelectedDeal, setData, showToast, user })
 }
 
 // ── DEAL DETAIL ──────────────────────────────────────────────────────────────
+function PhotoSection({ deal, dealId, setData, showToast, isDir }) {
+  const photos = deal.photos || [];
+  const [lightbox, setLightbox] = useState(null);
+  const [uploading, setUploading] = useState(false);
+
+  const handleFiles = (files) => {
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    const file = files[0];
+    if (file.size > 5 * 1024 * 1024) { showToast("Файл слишком большой (макс 5 МБ)"); setUploading(false); return; }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const photo = { id: Date.now(), src: e.target.result, name: file.name, addedAt: TODAY };
+      setData(d => ({ ...d, deals: d.deals.map(x => x.id === dealId ? { ...x, photos: [...(x.photos||[]), photo] } : x) }));
+      showToast("Фото добавлено");
+      setUploading(false);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removePhoto = (photoId) => {
+    setData(d => ({ ...d, deals: d.deals.map(x => x.id === dealId ? { ...x, photos: (x.photos||[]).filter(p=>p.id!==photoId) } : x) }));
+    showToast("Фото удалено");
+    setLightbox(null);
+  };
+
+  return (
+    <div style={{background:"#fff",borderRadius:14,border:"1px solid #ede9e3",padding:16,marginBottom:12}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+        <div style={{fontSize:12,color:"#aaa",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.05em"}}>
+          📸 Фото объекта {photos.length > 0 && <span style={{color:"#C9956A"}}>({photos.length})</span>}
+        </div>
+        <label style={{background:"#C9956A",color:"#fff",padding:"6px 14px",borderRadius:9,fontSize:12,fontWeight:600,cursor:"pointer"}}>
+          {uploading ? "..." : "+ Фото"}
+          <input type="file" accept="image/*" capture="environment" onChange={e=>handleFiles(e.target.files)} style={{display:"none"}}/>
+        </label>
+      </div>
+
+      {photos.length === 0 ? (
+        <label style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"28px 0",background:"#faf9f7",borderRadius:10,border:"1.5px dashed #e0ddd8",cursor:"pointer",gap:8}}>
+          <div style={{fontSize:32}}>📷</div>
+          <div style={{fontSize:13,color:"#aaa"}}>Нажмите чтобы добавить фото</div>
+          <div style={{fontSize:11,color:"#ccc"}}>Съёмка камерой или из галереи</div>
+          <input type="file" accept="image/*" capture="environment" onChange={e=>handleFiles(e.target.files)} style={{display:"none"}}/>
+        </label>
+      ) : (
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6}}>
+          {photos.map(p=>(
+            <div key={p.id} onClick={()=>setLightbox(p)} style={{aspectRatio:"1",borderRadius:8,overflow:"hidden",cursor:"pointer",position:"relative"}}>
+              <img src={p.src} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+            </div>
+          ))}
+          <label style={{aspectRatio:"1",borderRadius:8,border:"1.5px dashed #e0ddd8",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:24,color:"#ccc",background:"#faf9f7"}}>
+            +
+            <input type="file" accept="image/*" capture="environment" onChange={e=>handleFiles(e.target.files)} style={{display:"none"}}/>
+          </label>
+        </div>
+      )}
+
+      {/* Lightbox */}
+      {lightbox && (
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.92)",zIndex:300,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:20}} onClick={()=>setLightbox(null)}>
+          <img src={lightbox.src} alt="" style={{maxWidth:"100%",maxHeight:"75vh",borderRadius:10,objectFit:"contain"}} onClick={e=>e.stopPropagation()}/>
+          <div style={{color:"#aaa",fontSize:12,marginTop:10}}>{lightbox.addedAt}</div>
+          {isDir && (
+            <button onClick={e=>{e.stopPropagation();removePhoto(lightbox.id);}} style={{marginTop:14,background:"#c73534",color:"#fff",border:"none",borderRadius:10,padding:"10px 24px",fontSize:14,fontWeight:600,cursor:"pointer"}}>
+              🗑 Удалить фото
+            </button>
+          )}
+          <button onClick={()=>setLightbox(null)} style={{marginTop:10,background:"rgba(255,255,255,0.15)",color:"#fff",border:"none",borderRadius:10,padding:"10px 24px",fontSize:14,cursor:"pointer"}}>
+            Закрыть
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function DealDetail({ data, dealId, setPage, setData, showToast, user }) {
   const deal = data.deals.find(d=>d.id===dealId);
   const [editing, setEditing] = useState(false);
@@ -366,12 +444,17 @@ function DealDetail({ data, dealId, setPage, setData, showToast, user }) {
           </div>
         ))}
       </div>
+
       {deal.note && (
         <div style={{background:"#fff",borderRadius:14,border:"1px solid #ede9e3",padding:16,marginBottom:12}}>
           <div style={{fontSize:11,color:"#aaa",marginBottom:6,textTransform:"uppercase",fontWeight:600,letterSpacing:"0.05em"}}>Заметки</div>
           <div style={{fontSize:14,color:"#444",lineHeight:1.6}}>{deal.note}</div>
         </div>
       )}
+
+      {/* Photos — visible to everyone */}
+      <PhotoSection deal={deal} dealId={dealId} setData={setData} showToast={showToast} isDir={isDir}/>
+
       {isDir && (
         <>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
