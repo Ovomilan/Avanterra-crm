@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 
-const STORAGE_KEY = "avanterra_crm_v2";
+const STORAGE_KEY = "avanterra_crm_v3";
 const AUTH_KEY = "avanterra_auth_v2";
 
 const PINS = {
@@ -10,29 +10,9 @@ const PINS = {
 
 // task.status: "active" | "pending" | "done"
 const initialData = {
-  deals: [
-    { id: 1, client: "Керимов Д.А.", title: "Kerimov Residence — кухня + гостиная", area: 74, address: "Есиль р-н, ЖК Grand Nur", stage: "work", amount: 4200000, phone: "+7 701 234 5678", createdAt: "2026-04-15", note: "VIP клиент, материалы согласованы, бригада Рустама" },
-    { id: 2, client: "Ахметова С.Б.", title: "Нурлы Жол, кв. 214 — под ключ", area: 87, address: "Алматинский р-н, ЖК Нурлы Жол", stage: "measure", amount: 0, phone: "+7 702 345 6789", createdAt: "2026-06-10", note: "Первичный контакт через Instagram", measureDate: "2026-06-20", measureTime: "14:00" },
-    { id: 3, client: "Иванов А.Р.", title: "3-комн, 87 м² — полный ремонт", area: 87, address: "Байконур р-н, ул. Кенесары 40", stage: "estimate", amount: 2800000, phone: "+7 705 456 7890", createdAt: "2026-05-20", note: "Ждёт смету, готов подписать договор" },
-    { id: 4, client: "Сейткали М.", title: "Санузел + прихожая", area: 18, address: "Сарыарка р-н, пр. Туран 12", stage: "done", amount: 980000, phone: "+7 771 567 8901", createdAt: "2026-03-01", note: "Объект сдан, акт подписан" },
-    { id: 5, client: "ТОО BuildCom", title: "БЦ Omega — офис 3 этаж", area: 320, address: "Есиль р-н, пр. Достык 5", stage: "contract", amount: 11500000, phone: "+7 727 000 1111", createdAt: "2026-06-01", note: "Корпоративный клиент, тендер выигран" },
-    { id: 6, client: "Нуртаев Б.К.", title: "Двухкомнатная квартира под ключ", area: 62, address: "Алматинский р-н, ЖК Highvill", stage: "work", amount: 3100000, phone: "+7 777 678 9012", createdAt: "2026-05-05", note: "В работе, завершение через 3 недели" },
-  ],
-  clients: [
-    { id: 1, name: "Керимов Д.А.", phone: "+7 701 234 5678", email: "kerimov@mail.ru", type: "Физлицо", source: "Рекомендация", dealsCount: 1, totalAmount: 4200000 },
-    { id: 2, name: "Ахметова С.Б.", phone: "+7 702 345 6789", email: "", type: "Физлицо", source: "Instagram", dealsCount: 1, totalAmount: 0 },
-    { id: 3, name: "Иванов А.Р.", phone: "+7 705 456 7890", email: "ivanov@gmail.com", type: "Физлицо", source: "2ГИС", dealsCount: 1, totalAmount: 2800000 },
-    { id: 4, name: "Сейткали М.", phone: "+7 771 567 8901", email: "", type: "Физлицо", source: "Рекомендация", dealsCount: 1, totalAmount: 980000 },
-    { id: 5, name: "ТОО BuildCom", phone: "+7 727 000 1111", email: "info@buildcom.kz", type: "Юрлицо", source: "Тендер", dealsCount: 1, totalAmount: 11500000 },
-    { id: 6, name: "Нуртаев Б.К.", phone: "+7 777 678 9012", email: "", type: "Физлицо", source: "Instagram", dealsCount: 1, totalAmount: 3100000 },
-  ],
-  tasks: [
-    { id: 1, text: "Отправить смету — Иванов А.Р.", dueDate: "2026-06-19", priority: "high", status: "active" },
-    { id: 2, text: "Согласовать материалы (Керимов)", dueDate: "2026-06-18", priority: "high", status: "active" },
-    { id: 3, text: "Замер — ЖК Нурлы Жол, кв. 214", dueDate: "2026-06-19", priority: "normal", status: "active" },
-    { id: 4, text: "Акт приёмки — объект Сейткали", dueDate: "2026-06-20", priority: "normal", status: "done" },
-    { id: 5, text: "Финальный расчёт с ТОО BuildCom", dueDate: "2026-06-25", priority: "normal", status: "active" },
-  ],
+  deals: [],
+  clients: [],
+  tasks: [],
   deletedDeals: [],
 };
 
