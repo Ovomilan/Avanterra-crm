@@ -12,7 +12,7 @@ const PINS = {
 const initialData = {
   deals: [
     { id: 1, client: "Керимов Д.А.", title: "Kerimov Residence — кухня + гостиная", area: 74, address: "Есиль р-н, ЖК Grand Nur", stage: "work", amount: 4200000, phone: "+7 701 234 5678", createdAt: "2026-04-15", note: "VIP клиент, материалы согласованы, бригада Рустама" },
-    { id: 2, client: "Ахметова С.Б.", title: "Нурлы Жол, кв. 214 — под ключ", area: 87, address: "Алматинский р-н, ЖК Нурлы Жол", stage: "measure", amount: 0, phone: "+7 702 345 6789", createdAt: "2026-06-10", note: "Первичный контакт через Instagram" },
+    { id: 2, client: "Ахметова С.Б.", title: "Нурлы Жол, кв. 214 — под ключ", area: 87, address: "Алматинский р-н, ЖК Нурлы Жол", stage: "measure", amount: 0, phone: "+7 702 345 6789", createdAt: "2026-06-10", note: "Первичный контакт через Instagram", measureDate: "2026-06-20", measureTime: "14:00" },
     { id: 3, client: "Иванов А.Р.", title: "3-комн, 87 м² — полный ремонт", area: 87, address: "Байконур р-н, ул. Кенесары 40", stage: "estimate", amount: 2800000, phone: "+7 705 456 7890", createdAt: "2026-05-20", note: "Ждёт смету, готов подписать договор" },
     { id: 4, client: "Сейткали М.", title: "Санузел + прихожая", area: 18, address: "Сарыарка р-н, пр. Туран 12", stage: "done", amount: 980000, phone: "+7 771 567 8901", createdAt: "2026-03-01", note: "Объект сдан, акт подписан" },
     { id: 5, client: "ТОО BuildCom", title: "БЦ Omega — офис 3 этаж", area: 320, address: "Есиль р-н, пр. Достык 5", stage: "contract", amount: 11500000, phone: "+7 727 000 1111", createdAt: "2026-06-01", note: "Корпоративный клиент, тендер выигран" },
@@ -157,6 +157,12 @@ function DealForm({ initial, onSave, onClose }) {
         <Field label="Сумма, ₸"><FInput type="number" value={f.amount} onChange={e=>s("amount",e.target.value)} placeholder="0"/></Field>
       </div>
       <Field label="Стадия"><FSelect value={f.stage} onChange={e=>s("stage",e.target.value)} options={STAGES.map(st=>({value:st.key,label:st.label}))}/></Field>
+      {f.stage==="measure" && (
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+          <Field label="Дата замера"><FInput type="date" value={f.measureDate||""} onChange={e=>s("measureDate",e.target.value)}/></Field>
+          <Field label="Время замера"><FInput type="time" value={f.measureTime||""} onChange={e=>s("measureTime",e.target.value)}/></Field>
+        </div>
+      )}
       <Field label="Заметки"><textarea value={f.note} onChange={e=>s("note",e.target.value)} placeholder="Доп. информация..." style={{width:"100%",padding:"11px 14px",border:"1px solid #e0ddd8",borderRadius:10,fontSize:15,fontFamily:"inherit",outline:"none",boxSizing:"border-box",minHeight:80,resize:"vertical"}}/></Field>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginTop:8}}>
         <Btn variant="ghost" onClick={onClose}>Отмена</Btn>
@@ -555,8 +561,67 @@ function Clients({ data, setData, showToast, user }) {
   );
 }
 
+// ── STAFF VIEW (замеры) ───────────────────────────────────────────────────────
+function StaffMeasures({ data }) {
+  const measures = data.deals.filter(d => d.stage === "measure");
+  return (
+    <div style={{padding:"0 16px 16px"}}>
+      {measures.length === 0 && (
+        <div style={{textAlign:"center",padding:"60px 0",color:"#bbb"}}>
+          <div style={{fontSize:40,marginBottom:12}}>📐</div>
+          <div style={{fontSize:15,fontWeight:600,color:"#aaa"}}>Нет активных замеров</div>
+          <div style={{fontSize:13,color:"#bbb",marginTop:6}}>Руководитель назначит замер — он появится здесь</div>
+        </div>
+      )}
+      {measures.map(d => (
+        <div key={d.id} style={{background:"#fff",borderRadius:16,border:"1px solid #ede9e3",padding:"18px 16px",marginBottom:12,borderLeft:"4px solid #378ADD"}}>
+          {/* Date + time header */}
+          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14,padding:"10px 12px",background:"#E6F1FB",borderRadius:10}}>
+            <div style={{fontSize:22}}>📅</div>
+            <div>
+              <div style={{fontSize:15,fontWeight:700,color:"#185FA5"}}>
+                {d.measureDate ? formatDate(d.measureDate) : "Дата не указана"}
+              </div>
+              <div style={{fontSize:13,color:"#378ADD",fontWeight:600}}>
+                {d.measureTime ? "🕐 " + d.measureTime : "Время не указано"}
+              </div>
+            </div>
+          </div>
+          {/* Address */}
+          <div style={{display:"flex",alignItems:"flex-start",gap:10,marginBottom:12,padding:"10px 12px",background:"#f9f7f4",borderRadius:10}}>
+            <div style={{fontSize:18,flexShrink:0}}>📍</div>
+            <div>
+              <div style={{fontSize:11,color:"#aaa",marginBottom:3,textTransform:"uppercase",letterSpacing:"0.05em",fontWeight:600}}>Адрес объекта</div>
+              <div style={{fontSize:14,fontWeight:600,color:"#1a1a1a",lineHeight:1.4}}>{d.address}</div>
+            </div>
+          </div>
+          {/* Client phone */}
+          <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",background:"#f9f7f4",borderRadius:10}}>
+            <div style={{fontSize:18}}>📞</div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:11,color:"#aaa",marginBottom:3,textTransform:"uppercase",letterSpacing:"0.05em",fontWeight:600}}>Клиент</div>
+              <div style={{fontSize:13,fontWeight:600,color:"#1a1a1a"}}>{d.client}</div>
+            </div>
+            <a href={`tel:${d.phone}`} style={{background:"#C9956A",color:"#fff",textDecoration:"none",padding:"8px 14px",borderRadius:9,fontSize:13,fontWeight:600}}>Позвонить</a>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return "";
+  const [y, m, d] = dateStr.split("-");
+  const months = ["янв","фев","мар","апр","май","июн","июл","авг","сен","окт","ноя","дек"];
+  const days = ["вс","пн","вт","ср","чт","пт","сб"];
+  const date = new Date(dateStr);
+  return `${parseInt(d)} ${months[parseInt(m)-1]}, ${days[date.getDay()]}`;
+}
+
 // ── APP ──────────────────────────────────────────────────────────────────────
-const PAGE_TITLES = {dashboard:"Дашборд",deals:"Сделки",clients:"Клиенты",tasks:"Задачи","deal-detail":"Сделка"};
+const DIR_TITLES = {dashboard:"Дашборд",deals:"Сделки",clients:"Клиенты",tasks:"Задачи","deal-detail":"Сделка"};
+const STAFF_TITLES = {measures:"Замеры",tasks:"Задачи"};
 
 export default function App() {
   const [user, setUser] = useState(()=>loadAuth());
@@ -567,29 +632,38 @@ export default function App() {
 
   useEffect(()=>{ saveData(data); },[data]);
   const showToast = useCallback(msg=>setToast(msg),[]);
-  const handleAuth = u => { saveAuth(u); setUser(u); };
+  const handleAuth = u => { saveAuth(u); setUser(u); setPage(u.role==="staff"?"measures":"dashboard"); };
   const handleLogout = () => { clearAuth(); setUser(null); setPage("dashboard"); };
 
   if (!user) return <PinScreen onAuth={handleAuth}/>;
 
+  const isDir = user.role==="director";
   const isDetail = page==="deal-detail";
   const navPage = isDetail?"deals":page;
-  const isDir = user.role==="director";
   const pendingCount = data.tasks.filter(t=>t.status==="pending").length;
+  const measuresCount = data.deals.filter(d=>d.stage==="measure").length;
 
-  const NAV = [
+  const DIR_NAV = [
     {key:"dashboard",label:"Главная",icon:"⊞"},
     {key:"deals",label:"Сделки",icon:"💼"},
-    ...(isDir?[{key:"clients",label:"Клиенты",icon:"👥"}]:[]),
-    {key:"tasks",label:"Задачи",icon:"✅",badge:isDir&&pendingCount>0?pendingCount:null},
+    {key:"clients",label:"Клиенты",icon:"👥"},
+    {key:"tasks",label:"Задачи",icon:"✅",badge:pendingCount>0?pendingCount:null},
   ];
+
+  const STAFF_NAV = [
+    {key:"measures",label:"Замеры",icon:"📐",badge:measuresCount>0?measuresCount:null},
+    {key:"tasks",label:"Задачи",icon:"✅",badge:pendingCount>0?pendingCount:null},
+  ];
+
+  const NAV = isDir ? DIR_NAV : STAFF_NAV;
+  const pageTitle = isDir ? (DIR_TITLES[page]||"") : (STAFF_TITLES[page]||"");
 
   return (
     <div style={{maxWidth:430,margin:"0 auto",minHeight:"100dvh",background:"#f5f4f1",display:"flex",flexDirection:"column",fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"}}>
       <div style={{background:"#fff",borderBottom:"1px solid #ede9e3",padding:"12px 16px 10px",display:"flex",alignItems:"center",gap:12,position:"sticky",top:0,zIndex:10}}>
         {isDetail && <div onClick={()=>setPage("deals")} style={{fontSize:20,cursor:"pointer",color:"#C9956A"}}>←</div>}
         <div style={{flex:1}}>
-          <div style={{fontSize:17,fontWeight:700,color:"#1a1a1a"}}>{PAGE_TITLES[page]}</div>
+          <div style={{fontSize:17,fontWeight:700,color:"#1a1a1a"}}>{pageTitle}</div>
           <div style={{fontSize:11,color:"#bbb"}}>Avanterra · {user.label}</div>
         </div>
         <div onClick={handleLogout} style={{width:32,height:32,borderRadius:"50%",background:isDir?"#C9956A":"#7F77DD",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,cursor:"pointer",flexShrink:0}} title="Выйти">
@@ -597,18 +671,16 @@ export default function App() {
         </div>
       </div>
 
-      {!isDir && (
-        <div style={{background:"#EEEDFE",padding:"7px 16px",fontSize:12,color:"#534AB7",fontWeight:500}}>
-          👷 Режим просмотра — только задачи доступны для изменений
-        </div>
-      )}
-
       <div style={{flex:1,overflowY:"auto",paddingTop:16,paddingBottom:80}}>
-        {page==="dashboard" && <Dashboard data={data} setPage={setPage} setSelectedDeal={setSelectedDeal} user={user}/>}
-        {page==="deals" && <DealsList data={data} setPage={setPage} setSelectedDeal={setSelectedDeal} setData={setData} showToast={showToast} user={user}/>}
-        {page==="deal-detail" && <DealDetail data={data} dealId={selectedDeal} setPage={setPage} setData={setData} showToast={showToast} user={user}/>}
-        {page==="clients" && isDir && <Clients data={data} setData={setData} showToast={showToast} user={user}/>}
-        {page==="tasks" && <Tasks data={data} setData={setData} showToast={showToast} user={user}/>}
+        {/* Director pages */}
+        {isDir && page==="dashboard" && <Dashboard data={data} setPage={setPage} setSelectedDeal={setSelectedDeal} user={user}/>}
+        {isDir && page==="deals" && <DealsList data={data} setPage={setPage} setSelectedDeal={setSelectedDeal} setData={setData} showToast={showToast} user={user}/>}
+        {isDir && page==="deal-detail" && <DealDetail data={data} dealId={selectedDeal} setPage={setPage} setData={setData} showToast={showToast} user={user}/>}
+        {isDir && page==="clients" && <Clients data={data} setData={setData} showToast={showToast} user={user}/>}
+        {isDir && page==="tasks" && <Tasks data={data} setData={setData} showToast={showToast} user={user}/>}
+        {/* Staff pages */}
+        {!isDir && page==="measures" && <StaffMeasures data={data}/>}
+        {!isDir && page==="tasks" && <Tasks data={data} setData={setData} showToast={showToast} user={user}/>}
       </div>
 
       {!isDetail && (
